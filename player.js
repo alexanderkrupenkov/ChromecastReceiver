@@ -517,7 +517,7 @@ sampleplayer.CastPlayer.prototype.loadMetadata_ = function(media) {
   var metadata = media.metadata || {};
   var titleElement = this.element_.querySelector('.media-title');
   var title =  metadata.title;
-  title = sampleplayer.displayedChannelNames[title] || title;
+  title = sampleplayer.displayedChannelName(title) || title;
   sampleplayer.setInnerText_(titleElement, title);
 
   var subtitleElement = this.element_.querySelector('.media-subtitle');
@@ -528,8 +528,8 @@ sampleplayer.CastPlayer.prototype.loadMetadata_ = function(media) {
   sampleplayer.setBackgroundImage_(artworkElement, artwork);
 };
 
-sampleplayer.displayedChannelNames = function(channelName) {
-  return {
+sampleplayer.displayedChannelName = function(channelName) {
+  var displayedChannelNames = {
     "bein SPORTS" : "beIN SPORTS",
     "BeIN SPORTS Spanish" : "beIN SPORTS en Español",
     "BeIN 2" : "beIN SPORTS 2",
@@ -553,6 +553,7 @@ sampleplayer.displayedChannelNames = function(channelName) {
     "BEINSP9" : "beIN SPORTS 9",
     "BEINS10" : "beIN SPORTS 10"
   };
+  return displayedChannelNames[channelName];
 };
 
 /**
