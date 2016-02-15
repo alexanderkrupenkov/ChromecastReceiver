@@ -517,7 +517,7 @@ sampleplayer.CastPlayer.prototype.loadMetadata_ = function(media) {
   var metadata = media.metadata || {};
   var titleElement = this.element_.querySelector('.media-title');
   var title =  metadata.title;
-  title = "TestTitle";
+  title = sampleplayer.displayedChannelNames[title] ?: title;
   sampleplayer.setInnerText_(titleElement, title);
 
   var subtitleElement = this.element_.querySelector('.media-subtitle');
@@ -528,6 +528,21 @@ sampleplayer.CastPlayer.prototype.loadMetadata_ = function(media) {
   sampleplayer.setBackgroundImage_(artworkElement, artwork);
 };
 
+sampleplayer.displayedChannelNames = function(channelName) {
+  return {
+    "bein SPORTS" : "beIN SPORTS",
+    "BeIN SPORTS Spanish" : "beIN SPORTS en Español",
+    "BeIN 2" : "beIN SPORTS 2",
+    "BeIN 3" : "beIN SPORTS 3",
+    "BeIN 4" : "beIN SPORTS 4",
+    "BeIN 5" : "beIN SPORTS 5",
+    "BeIN 6" : "beIN SPORTS 6",
+    "BeIN 7" : "beIN SPORTS 7",
+    "BeIN 8" : "beIN SPORTS 8",
+    "BeIN 9" : "beIN SPORTS 9",
+    "BeIN 10" : "beIN SPORTS 10"
+  }
+}
 
 /**
  * Lets player handle autoplay, instead of depending on underlying
