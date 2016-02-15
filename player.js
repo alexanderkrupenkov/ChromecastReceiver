@@ -517,7 +517,7 @@ sampleplayer.CastPlayer.prototype.loadMetadata_ = function(media) {
   var metadata = media.metadata || {};
   var titleElement = this.element_.querySelector('.media-title');
   var title =  metadata.title;
-  title = sampleplayer.displayedChannelNames[title] ?: title;
+  title = sampleplayer.displayedChannelNames[title] || title;
   sampleplayer.setInnerText_(titleElement, title);
 
   var subtitleElement = this.element_.querySelector('.media-subtitle');
@@ -541,8 +541,8 @@ sampleplayer.displayedChannelNames = function(channelName) {
     "BeIN 8" : "beIN SPORTS 8",
     "BeIN 9" : "beIN SPORTS 9",
     "BeIN 10" : "beIN SPORTS 10"
-  }
-}
+  };
+};
 
 /**
  * Lets player handle autoplay, instead of depending on underlying
