@@ -540,7 +540,18 @@ sampleplayer.displayedChannelNames = function(channelName) {
     "BeIN 7" : "beIN SPORTS 7",
     "BeIN 8" : "beIN SPORTS 8",
     "BeIN 9" : "beIN SPORTS 9",
-    "BeIN 10" : "beIN SPORTS 10"
+    "BeIN 10" : "beIN SPORTS 10",
+    "BEINS1" : "beIN SPORTS",
+    "BEINSES" : "beIN SPORTS en Español",
+    "BEINSP2" : "beIN SPORTS 2",
+    "BEINSP3" : "beIN SPORTS 3",
+    "BEINSP4" : "beIN SPORTS 4",
+    "BEINSP5" : "beIN SPORTS 5",
+    "BEINSP6" : "beIN SPORTS 6",
+    "BEINSP7" : "beIN SPORTS 7",
+    "BEINSP8" : "beIN SPORTS 8",
+    "BEINSP9" : "beIN SPORTS 9",
+    "BEINS10" : "beIN SPORTS 10"
   };
 };
 
