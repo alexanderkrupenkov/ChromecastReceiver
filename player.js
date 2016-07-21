@@ -465,7 +465,7 @@ sampleplayer.CastPlayer.prototype.load = function(info) {
   if ('customData' in info.message.media) {
     var lang = 'en';
     if ('lang' in info.message.media.customData) {
-      mediaLang = info.message.media.customData['lang'];
+      var mediaLang = info.message.media.customData['lang'];
       if (mediaLang in i18n) {
         lang = mediaLang;
       }
