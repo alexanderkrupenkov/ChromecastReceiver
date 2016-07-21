@@ -58,7 +58,7 @@ var kCustomMediaTypeLive = 101;
 var kInitialTimeout = 1 * 60 * 1000;
 var kSuccessCheckTimeout = 5 * 60 * 1000;
 var kFailRecheckTimeout = 10 * 1000;
-var kLastChanceFailRecheckTimeout = 3 * 60 * 1000;
+var kLastChanceFailRecheckTimeout = 2 * 60 * 60 * 1000;
 
 var failRetryCount = 0;
 var currentTime = -1;
