@@ -15,6 +15,14 @@ var i18n = {
     nowCastingEmpty : 'Maintenant en direct',
     readyToCast : 'Prêt à la diffusion en direct',
   },
+  france : {
+    connectionError : 'Problème de connexion WIFI. Veuillez vérifier vos paramètres WIFI',
+    tooManyConnectionsError : 'Vous avez atteint le nombre maximum de connexions simultanées. Nous vous invitons à quitter puis revenir sur la page du direct.',
+    permissionError : 'Vous n’avez pas l’autorisation nécessaire.',
+    nowCasting : 'Maintenant en direct: ',
+    nowCastingEmpty : 'Maintenant en direct',
+    readyToCast : 'Prêt à la diffusion en direct',
+  },
   ru : {
     connectionError : 'Проблема с соединением Wi-Fi. Проверьте настройки роутера.',
     tooManyConnectionsError : 'Достигнут максимум разрешенных соединений. Перезайдите на страницу для просмотра передач.',
