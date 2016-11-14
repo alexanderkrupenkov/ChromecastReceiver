@@ -7,28 +7,12 @@ var i18n = {
     nowCastingEmpty : 'Now Casting',
     readyToCast : 'Ready to cast',
   },
-  fr : {
-    connectionError : 'Problème de connexion WIFI. Veuillez vérifier vos paramètres WIFI',
-    tooManyConnectionsError : 'Vous avez atteint le nombre maximum de connexions simultanées. Nous vous invitons à quitter puis revenir sur la page du direct.',
-    permissionError : 'Vous n’avez pas l’autorisation nécessaire.',
-    nowCasting : 'Maintenant en direct: ',
-    nowCastingEmpty : 'Maintenant en direct',
-    readyToCast : 'Prêt à la diffusion en direct',
-  },
-  france : {
-    connectionError : 'Problème de connexion WIFI. Veuillez vérifier vos paramètres WIFI',
-    tooManyConnectionsError : 'Vous avez atteint le nombre maximum de connexions simultanées. Nous vous invitons à quitter puis revenir sur la page du direct.',
-    permissionError : 'Vous n’avez pas l’autorisation nécessaire.',
-    nowCasting : 'Maintenant en direct: ',
-    nowCastingEmpty : 'Maintenant en direct',
-    readyToCast : 'Prêt à la diffusion en direct',
-  },
-  ru : {
-    connectionError : 'Проблема с соединением Wi-Fi. Проверьте настройки роутера.',
-    tooManyConnectionsError : 'Достигнут максимум разрешенных соединений. Перезайдите на страницу для просмотра передач.',
-    permissionError : 'У вас нет доступа',
-    nowCasting : 'Сейчас транслируется : ',
-    nowCastingEmpty : 'Сейчас транслируется',
-    readyToCast : 'Готов к трансляции',
+  es : {
+    connectionError : 'Hay un problema con la conexión WiFi. Por favor verifica la configuración del router.',
+    tooManyConnectionsError : 'Has llegado al limite de conexiones simultáneas. Por favor cierra la cesión y regresa a esta página para ver el contenido en vivo.',
+    permissionError : 'No tienes permiso para acceder este contenido.',
+    nowCasting : 'Transmitiendo: ',
+    nowCastingEmpty : 'Transmitiendo',
+    readyToCast : 'Listo para transmitir',
   }
 };

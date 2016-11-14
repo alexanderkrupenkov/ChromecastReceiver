@@ -536,8 +536,8 @@ sampleplayer.CastPlayer.prototype.loadMetadata_ = function(media) {
   this.log_('loadMetadata_');
   var metadata = media.metadata || {};
   var titleElement = this.element_.querySelector('.media-title');
-  var title =  metadata.title;  
-  title = sampleplayer.displayedChannelName(title) || title;      
+  var title =  metadata.title;
+  title = sampleplayer.displayedChannelName(title) || title;
   sampleplayer.setInnerText_(titleElement, title);
 
   var subtitleElement = this.element_.querySelector('.media-subtitle');
@@ -548,32 +548,32 @@ sampleplayer.CastPlayer.prototype.loadMetadata_ = function(media) {
   sampleplayer.setBackgroundImage_(artworkElement, artwork);
 };
 
-sampleplayer.displayedChannelName = function(channelName) { 
-  var displayedChannelNames = {     
-    "bein SPORTS" : "beIN SPORTS",      
-    "BeIN SPORTS Spanish" : "beIN SPORTS en Español",     
-    "BeIN 2" : "beIN SPORTS 2",     
-    "BeIN 3" : "beIN SPORTS 3",     
-    "BeIN 4" : "beIN SPORTS 4",     
-    "BeIN 5" : "beIN SPORTS 5",     
-    "BeIN 6" : "beIN SPORTS 6",     
-    "BeIN 7" : "beIN SPORTS 7",     
-    "BeIN 8" : "beIN SPORTS 8",     
-    "BeIN 9" : "beIN SPORTS 9",     
-    "BeIN 10" : "beIN SPORTS 10",     
-    "BEINS1" : "beIN SPORTS",     
-    "BEINSES" : "beIN SPORTS en Español",     
-    "BEINSP2" : "beIN SPORTS 2",      
-    "BEINSP3" : "beIN SPORTS 3",      
-    "BEINSP4" : "beIN SPORTS 4",      
-    "BEINSP5" : "beIN SPORTS 5",      
-    "BEINSP6" : "beIN SPORTS 6",      
-    "BEINSP7" : "beIN SPORTS 7",      
-    "BEINSP8" : "beIN SPORTS 8",      
-    "BEINSP9" : "beIN SPORTS 9",      
-    "BEINS10" : "beIN SPORTS 10"      
-  };      
-  return displayedChannelNames[channelName];      
+sampleplayer.displayedChannelName = function(channelName) {
+  var displayedChannelNames = {
+    "bein SPORTS" : "beIN SPORTS",
+    "BeIN SPORTS Spanish" : "beIN SPORTS en Español",
+    "BeIN 2" : "beIN SPORTS 2",
+    "BeIN 3" : "beIN SPORTS 3",
+    "BeIN 4" : "beIN SPORTS 4",
+    "BeIN 5" : "beIN SPORTS 5",
+    "BeIN 6" : "beIN SPORTS 6",
+    "BeIN 7" : "beIN SPORTS 7",
+    "BeIN 8" : "beIN SPORTS 8",
+    "BeIN 9" : "beIN SPORTS 9",
+    "BeIN 10" : "beIN SPORTS 10",
+    "BEINS1" : "beIN SPORTS",
+    "BEINSES" : "beIN SPORTS en Español",
+    "BEINSP2" : "beIN SPORTS 2",
+    "BEINSP3" : "beIN SPORTS 3",
+    "BEINSP4" : "beIN SPORTS 4",
+    "BEINSP5" : "beIN SPORTS 5",
+    "BEINSP6" : "beIN SPORTS 6",
+    "BEINSP7" : "beIN SPORTS 7",
+    "BEINSP8" : "beIN SPORTS 8",
+    "BEINSP9" : "beIN SPORTS 9",
+    "BEINS10" : "beIN SPORTS 10"
+  };
+  return displayedChannelNames[channelName];
 };
 
 /**

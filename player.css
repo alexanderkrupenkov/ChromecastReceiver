@@ -48,7 +48,7 @@
 body {
   background-color: #000;
   background-size: cover;
-  background-image: url("https://rawgit.com/bernikowich-cedoni/ChromecastReceiver/master/assets/bein_background.png");
+  background-image: url("https://rawgit.com/sergeimikhan/ChromecastReceiver/master/assets/bein_background.png");
 }
 
 .player {
@@ -184,7 +184,7 @@ body {
   margin-right: 32px;
   background-size: contain;
   background-repeat: no-repeat;
-  background-image: url('https://rawgit.com/bernikowich-cedoni/ChromecastReceiver/master/assets/done.png');
+  background-image: url('https://rawgit.com/sergeimikhan/ChromecastReceiver/master/assets/done.png');
 }
 
 .player .gradient {
@@ -269,7 +269,7 @@ body {
   width: 32px;
   display: block;
   position: absolute;
-  background-image: url("https://rawgit.com/bernikowich-cedoni/ChromecastReceiver/master/assets/buffering.png");
+  background-image: url("https://rawgit.com/sergeimikhan/ChromecastReceiver/master/assets/buffering.png");
   bottom: 64px;
   left: 50%;
   margin-left: 32px / -2;
@@ -328,7 +328,7 @@ body {
 }
 
 .player[state="buffering"] .controls-play-pause {
-  background-image: url("https://rawgit.com/bernikowich-cedoni/ChromecastReceiver/master/assets/buffering.png");
+  background-image: url("https://rawgit.com/sergeimikhan/ChromecastReceiver/master/assets/buffering.png");
   -webkit-animation: spin 1s infinite linear;
 }
 
@@ -361,7 +361,7 @@ body {
 }
 
 .player[state="paused"] .controls-play-pause {
-  background-image: url("https://rawgit.com/bernikowich-cedoni/ChromecastReceiver/master/assets/paused.png");
+  background-image: url("https://rawgit.com/sergeimikhan/ChromecastReceiver/master/assets/paused.png");
 }
 
 .player[state="paused"] .controls,
@@ -422,7 +422,7 @@ body {
 }
 
 .player[state="playing"] .controls-play-pause {
-  background-image: url("https://rawgit.com/bernikowich-cedoni/ChromecastReceiver/master/assets/buffering.png");
+  background-image: url("https://rawgit.com/sergeimikhan/ChromecastReceiver/master/assets/buffering.png");
   -webkit-animation: spin 1s infinite linear;
 }
 
