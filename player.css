@@ -48,7 +48,7 @@
 body {
   background-color: #000;
   background-size: cover;
-  background-image: url("https://rawgit.com/sergeimikhan/ChromecastReceiver/master/assets/nyra_background.png");
+  background-image: url("https://rawgit.com/sergeimikhan/ChromecastReceiver/master/assets/nyra_background.jpg");
 }
 
 .player {
