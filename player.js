@@ -458,10 +458,6 @@ sampleplayer.CastPlayer.prototype.load = function(info) {
   clearTimeout(this.idleTimerId_);
   var self = this;
 
-  // NOTE: check if we have any permissions data////////////////////////////////////////////
-  self.startViewRightsChecking();
-  //////////////////////////////////////////////////////////////////////////////////////////
-
   if ('customData' in info.message.media) {
     var lang = 'en';
     if ('lang' in info.message.media.customData) {
@@ -537,7 +533,6 @@ sampleplayer.CastPlayer.prototype.loadMetadata_ = function(media) {
   var metadata = media.metadata || {};
   var titleElement = this.element_.querySelector('.media-title');
   var title =  metadata.title;
-  title = sampleplayer.displayedChannelName(title) || title;
   sampleplayer.setInnerText_(titleElement, title);
 
   var subtitleElement = this.element_.querySelector('.media-subtitle');
@@ -546,34 +541,6 @@ sampleplayer.CastPlayer.prototype.loadMetadata_ = function(media) {
   var artwork = sampleplayer.getMediaImageUrl_(media);
   var artworkElement = this.element_.querySelector('.media-artwork');
   sampleplayer.setBackgroundImage_(artworkElement, artwork);
-};
-
-sampleplayer.displayedChannelName = function(channelName) {
-  var displayedChannelNames = {
-    "bein SPORTS" : "beIN SPORTS",
-    "BeIN SPORTS Spanish" : "beIN SPORTS en Español",
-    "BeIN 2" : "beIN SPORTS 2",
-    "BeIN 3" : "beIN SPORTS 3",
-    "BeIN 4" : "beIN SPORTS 4",
-    "BeIN 5" : "beIN SPORTS 5",
-    "BeIN 6" : "beIN SPORTS 6",
-    "BeIN 7" : "beIN SPORTS 7",
-    "BeIN 8" : "beIN SPORTS 8",
-    "BeIN 9" : "beIN SPORTS 9",
-    "BeIN 10" : "beIN SPORTS 10",
-    "BEINS1" : "beIN SPORTS",
-    "BEINSES" : "beIN SPORTS en Español",
-    "BEINSP2" : "beIN SPORTS 2",
-    "BEINSP3" : "beIN SPORTS 3",
-    "BEINSP4" : "beIN SPORTS 4",
-    "BEINSP5" : "beIN SPORTS 5",
-    "BEINSP6" : "beIN SPORTS 6",
-    "BEINSP7" : "beIN SPORTS 7",
-    "BEINSP8" : "beIN SPORTS 8",
-    "BEINSP9" : "beIN SPORTS 9",
-    "BEINS10" : "beIN SPORTS 10"
-  };
-  return displayedChannelNames[channelName];
 };
 
 /**
@@ -1471,96 +1438,6 @@ sampleplayer.CastPlayer.prototype.onLoadSuccess_ = function() {
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-sampleplayer.CastPlayer.prototype.startViewRightsChecking = function()  {
-    var self = this;
-
-    // NOTE: reset session new videos started
-    lastChance = false;
-    failRetryCount = 0;
-
-    self.setupViewRightsTimer(kInitialTimeout);
-};
-
-sampleplayer.CastPlayer.prototype.setupViewRightsTimer = function(timeout) {
-    var self = this;
-    var viewRightsTimer = setTimeout(function () {
-                                     self.viewRightsTimerCallback()
-                                     }, timeout);
-};
-
-sampleplayer.CastPlayer.prototype.viewRightsTimerCallback = function() {
-    var self = this;
-
-    self.postViewRights();
-};
-
-sampleplayer.CastPlayer.prototype.postViewRights = function()  {
-    var self = this;
-
-    var contentTypeHeader = "application/x-www-form-urlencoded";
-
-//    var viewRightsUrl       = "https://bein.portail.alphanetworks.be/proxy/viewRights";
-//    var postParams          = "streamAction=play&idChannel=6&deviceType=iPhone&streamRate=0";
-//    var webServiceKeyHeader = "jSrhl96FahxojSczvggPfzWCucl4xoo8";
-//    var deviceAuthToken     = "5e54ce435bb7a925700679102bbac3debca0e301fc7c26ef9aba4abebc1bf2dd3472dcfa443778ade5e1747868d062d9f5d72a0cc269745a5836946c81e88db8";
-//    var customerAuthToken   = "05d67203c8e2d2b77ea5100950d958ae335c162933d0f5c36b2d369a34b8a4b3ce135f6b6f1db8a2dd9548173f3771a787d98a2ad5f08c6a283072ead0b064f8";
-
-    if (!currentHeartBeatData) {
-      return;
-    }
-
-    var viewRightsUrl       = currentHeartBeatData.url;
-    var postParams          = currentHeartBeatData.params;
-    var webServiceKeyHeader = currentHeartBeatData.service_key;
-    var deviceAuthToken     = currentHeartBeatData.device_token;
-    var customerAuthToken   = currentHeartBeatData.auth_token;
-
-    var xmlHttpRequest = new XMLHttpRequest();
-    xmlHttpRequest.open("POST", viewRightsUrl, true);
-
-    xmlHttpRequest.setRequestHeader("Content-type", contentTypeHeader);
-
-    xmlHttpRequest.setRequestHeader("X-AN-WebService-IdentityKey", webServiceKeyHeader);
-    xmlHttpRequest.setRequestHeader("X-AN-WebService-DeviceAuthToken", deviceAuthToken);
-    xmlHttpRequest.setRequestHeader("X-AN-WebService-CustomerAuthToken", customerAuthToken);
-
-    xmlHttpRequest.onreadystatechange = function(responseText) {
-        if(xmlHttpRequest.readyState == 4 && xmlHttpRequest.status == 200) {
-            // NOTE: so, we skip all 'transport' issues
-            var responseString = xmlHttpRequest.responseText;
-            var jsonResponse = JSON.parse(responseString);
-            var timeout = 0;
-
-            if (jsonResponse.status == 1) {
-                timeout = kSuccessCheckTimeout;
-                lastChance = false;
-                failRetryCount = 0;
-
-                if (jsonResponse.result.rights.streamState === false && jsonResponse.result.rights.to > (new Date).getTime() / 1000) {
-                    self.showPermissionError(currentI18n['tooManyConnectionsError']);//'You have reached the maximum number of simultaneous connections. We invite you to leave and come back on this page in order to watch the Live channels.'
-                }
-            } else {
-                if (lastChance) {
-                    self.showPermissionError(currentI18n['permissionError']);//'You do not have permission.'
-                    return;
-                } else {
-                    timeout = kFailRecheckTimeout;
-                    failRetryCount = failRetryCount + 1;
-                    if (failRetryCount >= 3) {
-                        lastChance = true;
-                        timeout = kLastChanceFailRecheckTimeout;
-                    }
-                }
-                console.error('### PERMISSION ERROR retry count ' + failRetryCount);
-            }
-            console.log('### ViewRights: got response(200) -' + responseString + ' retry in ' + timeout / 1000);
-            self.setupViewRightsTimer(timeout);
-        }
-    }
-
-    xmlHttpRequest.send(postParams);
-};
 
 sampleplayer.CastPlayer.prototype.showNetworkError = function()  {
   console.error('### NETWORK ERROR.');
