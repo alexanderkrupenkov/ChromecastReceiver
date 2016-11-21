@@ -1,0 +1,7 @@
+.player .watermark {
+  background-image: url('assets/saratoga/watermark.png');
+}
+
+.player .progressBar {
+  background-color: #EE3424;
+}
