@@ -1,0 +1,7 @@
+.player .watermark {
+  background-image: url('assets/belmont/watermark.png');
+}
+
+.player .progressBar {
+  background-color: #00704A;
+}
