@@ -489,7 +489,7 @@ body {
 }
 
 .player[state="error"] {
-    background-image: url('http://vignette2.wikia.nocookie.net/inflation-rpg/images/3/3b/Icon-warning.png/revision/latest?cb=20140527184942');
+    background-image: url('assets/icon_warning.png');
     background-size: 33%;
 }
 
