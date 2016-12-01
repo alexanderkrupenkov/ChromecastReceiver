@@ -5,3 +5,7 @@
 .player .progressBar {
   background-color: #00B4CC;
 }
+
+body {
+  background-image: url("assets/aqueduct/background.jpg");
+}

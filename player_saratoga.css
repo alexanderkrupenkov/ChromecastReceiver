@@ -5,3 +5,7 @@
 .player .progressBar {
   background-color: #EE3424;
 }
+
+body {
+  background-image: url("assets/saratoga/background.jpg");
+}
