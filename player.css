@@ -47,7 +47,7 @@
 
 body {
   background-color: rgba(205, 0, 38, .8);
-  background-image: url("Images/chromecast_default.png");
+  background-image: url("https://raw.githubusercontent.com/alexanderkrupenkov/ChromecastReceiver/master/assets/chromecast_default.png");
   background-repeat: no-repeat;
   background-attachment: fixed;
   background-position: center; 
@@ -204,7 +204,7 @@ body {
   background-position: bottom right;
   background-repeat: no-repeat;
   margin-bottom: 54px;
-  background-image: url("Images/watermark.png");
+  background-image: url("https://raw.githubusercontent.com/alexanderkrupenkov/ChromecastReceiver/master/assets/watermark.png");
   background-size: 7.5%;
 }
 
@@ -292,7 +292,7 @@ body {
   width: 32px;
   display: block;
   position: absolute;
-  background-image: url("Images/buffering.png");
+  background-image: url("https://raw.githubusercontent.com/alexanderkrupenkov/ChromecastReceiver/master/assets/buffering.png");
   bottom: 64px;
   left: 50%;
   margin-left: 32px / -2;
@@ -379,7 +379,7 @@ body {
 }
 
 .player[state="paused"] .controls-play-pause {
-  background-image: url("Images/paused.png");
+  background-image: url("https://raw.githubusercontent.com/alexanderkrupenkov/ChromecastReceiver/master/assets/buffering.png");
 }
 
 .player[state="paused"] .controls,
@@ -392,7 +392,7 @@ body {
 
 .player[state="paused"][live="true"] {
   background-color: rgba(205, 0, 38, .8);
-  background-image: url("Images/chromecast_default.png");
+  background-image: url("https://raw.githubusercontent.com/alexanderkrupenkov/ChromecastReceiver/master/assets/chromecast_default.png");
   background-repeat: no-repeat;
   background-attachment: fixed;
   background-position: center; 
@@ -534,7 +534,7 @@ body {
 }
 
 .player[state="error"] {
-    background-image: url('Images/warning.png');
+    background-image: url('https://raw.githubusercontent.com/alexanderkrupenkov/ChromecastReceiver/master/assets/warning.png');
     background-size: 33%;
 }
 
