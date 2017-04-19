@@ -52,21 +52,12 @@
  */
 var sampleplayer = sampleplayer || {};
 
-var kNetworkCheckingTimeout = 5000;
-var networkCheckingRetryCount = 0;
-var kCustomMediaTypeLive = 101;
-var kInitialTimeout = 1 * 60 * 1000;
-var kSuccessCheckTimeout = 5 * 60 * 1000;
-var kFailRecheckTimeout = 10 * 1000;
-var kLastChanceFailRecheckTimeout = 2 * 60 * 60 * 1000;
-
-var failRetryCount = 0;
-var currentTime = -1;
-var lastChance = false;
 var currentHeartBeatData;
 var currentI18n = i18n['en'];
 var timeToSet = -1;
 var dash_live_duration = 3 * 60 * 60;
+
+var kCustomMediaTypeLive = 101; // DASH FEED TYPE
 /**
  * <p>
  * Cast player constructor - This does the following:
@@ -280,8 +271,6 @@ sampleplayer.CastPlayer = function(element) {
 
   this.mediaManager_.customizedStatusCallback =
       this.customizedStatusCallback_.bind(this);
-
-  //this.setupCheckConnectionTimer();
 };
 
 
@@ -637,12 +626,14 @@ sampleplayer.CastPlayer.prototype.loadVideo_ = function(info) {
     this.player_ = new cast.player.api.Player(host);
     this.protocol_ = protocolFunc(host);
 	timeToSet = info.message.currentTime;
-	//currentTime = info.message.currentTime;
-	//this.mediaElement_.currentTime = currentTime
 	
 	this.log_('loadVideo_: info.message.currentTime = ' + info.message.currentTime);
 	this.log_('loadVideo_: info.media.duration = ' + info.message.media.duration);
-    if (info.message.currentTime == 0 || true/*&& info.message.media.metadata.CustomMediaType == kCustomMediaTypeLive*/) {
+	
+	var dashFeed = sampleplayer.getExtension_(path) === 'mpd' || type === 'application/dash+xml';
+	this.log_('loadVideo_: dashFeed = ' + dashFeed);
+	
+    if (/*info.message.currentTime == 0 ||*/ dashFeed) {
         this.player_.load(this.protocol_, Infinity);
     } else {
         this.player_.load(this.protocol_, info.message.currentTime);
@@ -1127,6 +1118,7 @@ sampleplayer.CastPlayer.prototype.onPlaying_ = function() {
   this.cancelDeferredPlay_('media is already playing');
   var isLoading = this.state_ === sampleplayer.State.LOADING;
   this.setState_(sampleplayer.State.PLAYING, isLoading);
+  this.element_.setAttribute('resumed', true);
 };
 
 
@@ -1140,6 +1132,7 @@ sampleplayer.CastPlayer.prototype.onPlaying_ = function() {
 sampleplayer.CastPlayer.prototype.onPause_ = function() {
   this.log_('onPause');
   this.cancelDeferredPlay_('media is paused');
+  this.element_.setAttribute('resumed', false);
   var isIdle = this.state_ === sampleplayer.State.IDLE;
   var isDone = this.mediaElement_.currentTime === this.mediaElement_.duration;
   var isUnderflow = this.player_ && this.player_.getState()['underflow'];
@@ -1151,20 +1144,6 @@ sampleplayer.CastPlayer.prototype.onPause_ = function() {
     this.setState_(sampleplayer.State.PAUSED, false);
   }
   this.updateProgress_();
-  //this.updateCurrentLiveOffset();
-};
-
-
-sampleplayer.CastPlayer.prototype.updateCurrentLiveOffset = function() {
-  var self = this;
-  if (!isFinite(this.mediaElement_.duration)) {
-    setTimeout(function() {
-      if (self.state_ !== sampleplayer.State.PLAYING && currentTime > 0) {
-        currentTime = currentTime - 1;
-        self.updateCurrentLiveOffset();
-      }
-    }, 1000);
-  }
 };
 
 /**
@@ -1272,10 +1251,8 @@ sampleplayer.CastPlayer.prototype.updateProgress_ = function() {
  * @private
  */
 sampleplayer.CastPlayer.prototype.onSeekStart_ = function() {
-  this.log_('onSeekStart - currentTime = ' + currentTime);
-   
-  
-  currentTime = this.mediaElement_.currentTime;
+  this.log_('onSeekStart time = ' + this.mediaElement_.currentTime);
+
   clearTimeout(this.seekingTimeoutId_);
   this.element_.classList.add('seeking');
   this.updateProgress_();
@@ -1288,10 +1265,11 @@ sampleplayer.CastPlayer.prototype.onSeekStart_ = function() {
  * @private
  */
 sampleplayer.CastPlayer.prototype.onSeekEnd_ = function() {
-  this.log_('onSeekEnd currentTime = ' + this.mediaElement_.currentTime);
+  this.log_('onSeekEnd time = ' + this.mediaElement_.currentTime);
   this.log_('onSeekEnd newDashPositionSeted = ' + !newDashPositionSeted + " isFinite = " +  !isFinite(this.mediaElement_.duration));
 		
 	
+
   if (!newDashPositionSeted && !isFinite(this.mediaElement_.duration)) {
 	  //newDashPositionSeted = false;
       var seconds = new Date().getTime() / 1000 - dash_live_duration;
@@ -1300,10 +1278,9 @@ sampleplayer.CastPlayer.prototype.onSeekEnd_ = function() {
       this.log_('onSeekEnd_ timeToSet = ' + timeToSet);
       this.log_('onSeekEnd_ this.mediaElement_.currentTime = ' + this.mediaElement_.currentTime);
 	  this.log_('onSeekEnd_ result = ' + (seconds + timeToSet));
-	  newDashPositionSeted = true
+	  newDashPositionSeted = true;
   } 
-  
-  currentTime = this.mediaElement_.currentTime;
+
   clearTimeout(this.seekingTimeoutId_);
   this.seekingTimeoutId_ = sampleplayer.addClassWithTimeout_(this.element_,
       'seeking', 3000);
