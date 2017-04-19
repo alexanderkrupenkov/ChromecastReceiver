@@ -623,6 +623,8 @@ sampleplayer.CastPlayer.prototype.loadVideo_ = function(info) {
 
     this.player_ = new cast.player.api.Player(host);
     this.protocol_ = protocolFunc(host);
+	this.log_('loadVideo_: info.message.currentTime = ' + info.message.currentTime);
+	this.log_('loadVideo_: info.media.duration = ' + info.message.media.duration);
     if (info.message.currentTime < 0) {
         this.player_.load(this.protocol_, Infinity);
     } else {
@@ -1214,19 +1216,36 @@ sampleplayer.CastPlayer.prototype.onProgress_ = function() {
  */
 sampleplayer.CastPlayer.prototype.updateProgress_ = function() {
   // Update the time and the progress bar
-  var curTime = this.mediaElement_.currentTime;
+  var curTime = this.mediaElement_.currentTime * 1000;
+  this.log_('updateProgress_ curTime = ' + curTime);
   // TODO: for live we have two hours duration(not really duration, but 2h seeking)
   // so we need to setup 2h for live i think to have the same progressbar with phone
   var totalTime = this.mediaElement_.duration;
-  if (!isFinite(totalTime)) totalTime = 2 * 60 * 60;
+  var isDash = false;
+  if (!isFinite(totalTime)) {
+	  totalTime = 3 * 60 * 60;
+	  isDash = true;
+	  this.log_('updateProgress_ isDash= ' + isDash);
+  }
     
-  if (!isNaN(curTime) && !isNaN(totalTime)) {
+	if (isDash) {
+			 var date = new Date();
+     var time = date.getHours()+':'+date.getMinutes()+':'+date.getSeconds();
+	this.log_('updateProgress_ time= ' + time);
+this.totalTimeElement_.innerText = date.toLocaleTimeString();
+	} else {
+		  if (!isNaN(curTime) && !isNaN(totalTime)) {
     var pct = 100 * (curTime / totalTime);
     this.curTimeElement_.innerText = sampleplayer.formatDuration_(curTime);
     this.totalTimeElement_.innerText = sampleplayer.formatDuration_(totalTime);
     this.progressBarInnerElement_.style.width = pct + '%';
     this.progressBarThumbElement_.style.left = pct + '%';
   }
+  
+}
+		
+	
+
 };
 
 
@@ -1452,7 +1471,7 @@ sampleplayer.CastPlayer.prototype.setupViewRightsTimer = function(timeout) {
 sampleplayer.CastPlayer.prototype.viewRightsTimerCallback = function() {
     var self = this;
     
-    self.postViewRights();
+     self.postViewRights();
 };
 
 sampleplayer.CastPlayer.prototype.postViewRights = function()  {

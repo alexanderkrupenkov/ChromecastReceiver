@@ -52,20 +52,21 @@
  */
 var sampleplayer = sampleplayer || {};
 
-var kInitialTimeout //= 1 * 60 * 1000;
-= 3000;
-var kSuccessCheckTimeout //= 5 * 60 * 1000;
-= 10 * 1000;
-var kFailRecheckTimeout //= 10 * 1000;
-= 3 * 1000;
-var kLastChanceFailRecheckTimeout //= 3 * 60 * 1000;
-= 15 * 1000;
+var kNetworkCheckingTimeout = 5000;
+var networkCheckingRetryCount = 0;
+var kCustomMediaTypeLive = 101;
+var kInitialTimeout = 1 * 60 * 1000;
+var kSuccessCheckTimeout = 5 * 60 * 1000;
+var kFailRecheckTimeout = 10 * 1000;
+var kLastChanceFailRecheckTimeout = 2 * 60 * 60 * 1000;
 
 var failRetryCount = 0;
+var currentTime = -1;
 var lastChance = false;
 var currentHeartBeatData;
 var currentI18n = i18n['en'];
-
+var timeToSet = -1;
+var dash_live_duration = 3 * 60 * 60;
 /**
  * <p>
  * Cast player constructor - This does the following:
@@ -150,11 +151,12 @@ sampleplayer.CastPlayer = function(element) {
    */
   this.totalTimeElement_ = this.getElementByClass_('.controls-total-time');
 
-    /**
+  /**
    * The DOM element for the error label.
    * @private {!Element}
    */
   this.errorMessageElement_ = this.getElementByClass_('.error-message');
+
 
   /**
    * Streaming protocol.
@@ -211,7 +213,7 @@ sampleplayer.CastPlayer = function(element) {
       this.onVisibilityChanged_.bind(this);
   this.receiverManager_.setApplicationState(
       sampleplayer.getApplicationState_());
-
+	  
 
   /**
    * The remote media object.
@@ -227,6 +229,15 @@ sampleplayer.CastPlayer = function(element) {
       this.mediaManager_.onLoad.bind(this.mediaManager_);
   this.mediaManager_.onLoad = this.onLoad_.bind(this);
 
+    /**
+   * The original seek callback.
+   * @private {?function(cast.receiver.MediaManager.Event)}
+   */
+  this.onSeekOrig_ =
+      this.mediaManager_.onSeek.bind(this.mediaManager_);
+  this.mediaManager_.onSeek = this.onSeek_.bind(this);
+
+  
   /**
    * The original editTracksInfo callback
    * @private {?function(!cast.receiver.MediaManager.Event)}
@@ -269,6 +280,8 @@ sampleplayer.CastPlayer = function(element) {
 
   this.mediaManager_.customizedStatusCallback =
       this.customizedStatusCallback_.bind(this);
+
+  //this.setupCheckConnectionTimer();
 };
 
 
@@ -452,6 +465,7 @@ sampleplayer.CastPlayer.prototype.start = function() {
  */
 sampleplayer.CastPlayer.prototype.load = function(info) {
   this.log_('onLoad_');
+
   clearTimeout(this.idleTimerId_);
   var self = this;
     
@@ -459,7 +473,7 @@ sampleplayer.CastPlayer.prototype.load = function(info) {
   var media = info.message.media || {};
   var contentType = media.contentType;
   var playerType = sampleplayer.getType_(media);
-  var isLiveStream = false;//media.streamType === cast.receiver.media.StreamType.LIVE;
+  var isLiveStream = media.streamType === cast.receiver.media.StreamType.LIVE;
   this.element_.setAttribute('resumed', false);
   if (!media.contentId) {
     this.log_('Load failed: no content');
@@ -551,7 +565,6 @@ sampleplayer.CastPlayer.prototype.letPlayerHandleAutoPlay_ = function(info) {
   this.playerAutoPlay_ = autoplay == undefined ? true : autoplay;
 };
 
-
 /**
  * Loads some video content.
  *
@@ -623,12 +636,14 @@ sampleplayer.CastPlayer.prototype.loadVideo_ = function(info) {
 
     this.player_ = new cast.player.api.Player(host);
     this.protocol_ = protocolFunc(host);
+	timeToSet = info.message.currentTime;
+	
 	this.log_('loadVideo_: info.message.currentTime = ' + info.message.currentTime);
 	this.log_('loadVideo_: info.media.duration = ' + info.message.media.duration);
-    if (info.message.currentTime < 0) {
+    if (info.message.currentTime == 0/*&& info.message.media.metadata.CustomMediaType == kCustomMediaTypeLive*/) {
         this.player_.load(this.protocol_, Infinity);
     } else {
-        this.player_.load(this.protocol_);
+        this.player_.load(this.protocol_, info.message.currentTime);
     }
   }
   this.loadMediaManagerInfo_(info, !!protocolFunc);
@@ -980,7 +995,6 @@ sampleplayer.CastPlayer.prototype.setType_ = function(type, isLiveStream) {
   this.type_ = type;
   this.element_.setAttribute('type', type);
   this.element_.setAttribute('live', isLiveStream.toString());
-  var watermark = this.getElementByClass_('.watermark');
 };
 
 
@@ -1111,7 +1125,6 @@ sampleplayer.CastPlayer.prototype.onPlaying_ = function() {
   this.cancelDeferredPlay_('media is already playing');
   var isLoading = this.state_ === sampleplayer.State.LOADING;
   this.setState_(sampleplayer.State.PLAYING, isLoading);
-  this.element_.setAttribute('resumed', true);
 };
 
 
@@ -1125,7 +1138,6 @@ sampleplayer.CastPlayer.prototype.onPlaying_ = function() {
 sampleplayer.CastPlayer.prototype.onPause_ = function() {
   this.log_('onPause');
   this.cancelDeferredPlay_('media is paused');
-  this.element_.setAttribute('resumed', false);
   var isIdle = this.state_ === sampleplayer.State.IDLE;
   var isDone = this.mediaElement_.currentTime === this.mediaElement_.duration;
   var isUnderflow = this.player_ && this.player_.getState()['underflow'];
@@ -1137,8 +1149,21 @@ sampleplayer.CastPlayer.prototype.onPause_ = function() {
     this.setState_(sampleplayer.State.PAUSED, false);
   }
   this.updateProgress_();
+  //this.updateCurrentLiveOffset();
 };
 
+
+sampleplayer.CastPlayer.prototype.updateCurrentLiveOffset = function() {
+  var self = this;
+  if (!isFinite(this.mediaElement_.duration)) {
+    setTimeout(function() {
+      if (self.state_ !== sampleplayer.State.PLAYING && currentTime > 0) {
+        currentTime = currentTime - 1;
+        self.updateCurrentLiveOffset();
+      }
+    }, 1000);
+  }
+};
 
 /**
  * Changes player state reported to sender, if necessary.
@@ -1215,37 +1240,27 @@ sampleplayer.CastPlayer.prototype.onProgress_ = function() {
  * @private
  */
 sampleplayer.CastPlayer.prototype.updateProgress_ = function() {
-  // Update the time and the progress bar
-  var curTime = this.mediaElement_.currentTime * 1000;
-  this.log_('updateProgress_ curTime = ' + curTime);
-  // TODO: for live we have two hours duration(not really duration, but 2h seeking)
-  // so we need to setup 2h for live i think to have the same progressbar with phone
+  var curTime = this.mediaElement_.currentTime;
   var totalTime = this.mediaElement_.duration;
-  var isDash = false;
-  if (!isFinite(totalTime)) {
-	  totalTime = 3 * 60 * 60;
-	  isDash = true;
-	  this.log_('updateProgress_ isDash= ' + isDash);
+  
+  this.log_('updateProgress_ currentTime = ' + this.mediaElement_.currentTime);
+  this.log_('updateProgress_ duration = ' + this.mediaElement_.duration);
+  
+  if (isFinite(totalTime)) {
+      this.totalTimeElement_.innerText = sampleplayer.formatDuration_(totalTime);
+      this.curTimeElement_.innerText = sampleplayer.formatDuration_(curTime);
+  } else {
+      totalTime = dash_live_duration;
+      curTime = timeToSet; // time for LIVE
+      this.totalTimeElement_.innerText = "LIVE";
+      this.curTimeElement_.innerText = sampleplayer.formatDuration_(-curTime);
   }
-    
-	if (isDash) {
-			 var date = new Date();
-     var time = date.getHours()+':'+date.getMinutes()+':'+date.getSeconds();
-	this.log_('updateProgress_ time= ' + time);
-this.totalTimeElement_.innerText = date.toLocaleTimeString();
-	} else {
-		  if (!isNaN(curTime) && !isNaN(totalTime)) {
-    var pct = 100 * (curTime / totalTime);
-    this.curTimeElement_.innerText = sampleplayer.formatDuration_(curTime);
-    this.totalTimeElement_.innerText = sampleplayer.formatDuration_(totalTime);
+
+  if (!isNaN(curTime) && !isNaN(totalTime)) {
+    var pct = 100 * (Math.abs(curTime) / Math.abs(totalTime));
     this.progressBarInnerElement_.style.width = pct + '%';
     this.progressBarThumbElement_.style.left = pct + '%';
   }
-  
-}
-		
-	
-
 };
 
 
@@ -1255,7 +1270,10 @@ this.totalTimeElement_.innerText = date.toLocaleTimeString();
  * @private
  */
 sampleplayer.CastPlayer.prototype.onSeekStart_ = function() {
-  this.log_('onSeekStart');
+  this.log_('onSeekStart - currentTime = ' + currentTime);
+   
+  
+  currentTime = this.mediaElement_.currentTime;
   clearTimeout(this.seekingTimeoutId_);
   this.element_.classList.add('seeking');
   this.updateProgress_();
@@ -1268,7 +1286,20 @@ sampleplayer.CastPlayer.prototype.onSeekStart_ = function() {
  * @private
  */
 sampleplayer.CastPlayer.prototype.onSeekEnd_ = function() {
-  this.log_('onSeekEnd');
+  this.log_('onSeekEnd currentTime = ' + currentTime);
+  this.log_('onSeekEnd newDashPositionSeted = ' + newDashPositionSeted + " isFinite = " +  !isFinite(this.mediaElement_.duration));
+	
+	
+  if (!newDashPositionSeted && !isFinite(this.mediaElement_.duration)) {
+	  this.log_('onSeekEnd dash if');
+      var seconds = new Date().getTime() / 1000 - dash_live_duration;
+      this.mediaElement_.currentTime = seconds + timeToSet;
+      this.log_('onLoadSuccess timeToSet = ' + timeToSet);
+      this.log_('onLoadSuccess this.mediaElement_.currentTime = ' + this.mediaElement_.currentTime);
+	  newDashPositionSeted = true;
+  }
+  
+  currentTime = this.mediaElement_.currentTime;
   clearTimeout(this.seekingTimeoutId_);
   this.seekingTimeoutId_ = sampleplayer.addClassWithTimeout_(this.element_,
       'seeking', 3000);
@@ -1310,6 +1341,37 @@ sampleplayer.CastPlayer.prototype.onLoad_ = function(event) {
       event.senderId));
 };
 
+sampleplayer.CastPlayer.prototype.onSeek_ = function(event) {
+  this.log_('onSeek_ event time = ' + event.data.currentTime);
+  
+	newDashPositionSeted = false;
+	  
+	if (!newDashPositionSeted && !isFinite(this.mediaElement_.duration)) {
+	  timeToSet = event.data.currentTime;
+      var seconds = new Date().getTime() / 1000 - dash_live_duration;
+      this.mediaElement_.currentTime = seconds + timeToSet;
+      this.log_('onLoadSuccess timeToSet = ' + timeToSet);
+      this.log_('onLoadSuccess this.mediaElement_.currentTime = ' + this.mediaElement_.currentTime);
+	  newDashPositionSeted = true;
+  } else {
+	  timeToSet = event.data.currentTime
+	  this.mediaElement_.currentTime = event.data.currentTime
+  }
+  
+    event.data.currentTime = timeToSet;
+  
+    this.onSeekOrig_(event);
+    this.mediaManager_.sendStatus(event.senderId, event.data.requestId, true);
+  
+   // this.onSeekOrig_(new cast.receiver.MediaManager.Event(
+   //   cast.receiver.MediaManager.EventType.SEEK,
+   //   /** @type {!cast.receiver.MediaManager.OnSeekRequestData} */ (event.data),
+   //   info.senderId));
+	  
+	//clearTimeout(this.seekingTimeoutId_);
+	//this.seekingTimeoutId_ = sampleplayer.addClassWithTimeout_(this.element_,
+    //  'seeking', 3000);
+};
 
 /**
  * Called when we receive a EDIT_TRACKS_INFO message.
@@ -1435,9 +1497,10 @@ sampleplayer.CastPlayer.prototype.onLoadSuccess_ = function() {
   this.log_('onLoadSuccess');
   // we should have total time at this point, so update the label
   // and progress bar
-    
+
   // TODO: for live we have two hours duration(not really duration, but 2h seeking)
   // so we need to setup 2h for live i think to have the same progressbar with phone
+ 
   var totalTime = this.mediaElement_.duration;
   if (!isNaN(totalTime)) {
     this.totalTimeElement_.textContent =
@@ -1449,103 +1512,7 @@ sampleplayer.CastPlayer.prototype.onLoadSuccess_ = function() {
   }
 };
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-sampleplayer.CastPlayer.prototype.startViewRightsChecking = function()  {
-    var self = this;
-    
-    // NOTE: reset session new videos started
-    lastChance = false;
-    failRetryCount = 0;
-    
-    self.setupViewRightsTimer(kInitialTimeout);
-};
-
-sampleplayer.CastPlayer.prototype.setupViewRightsTimer = function(timeout) {
-    var self = this;
-    var viewRightsTimer = setTimeout(function () {
-                                     self.viewRightsTimerCallback()
-                                     }, timeout);
-};
-
-sampleplayer.CastPlayer.prototype.viewRightsTimerCallback = function() {
-    var self = this;
-    
-     self.postViewRights();
-};
-
-sampleplayer.CastPlayer.prototype.postViewRights = function()  {
-    var self = this;
-    
-    var contentTypeHeader = "application/x-www-form-urlencoded";
-    
-//    var viewRightsUrl       = "https://bein.portail.alphanetworks.be/proxy/viewRights";
-//    var postParams          = "streamAction=play&idChannel=6&deviceType=iPhone&streamRate=0";
-//    var webServiceKeyHeader = "jSrhl96FahxojSczvggPfzWCucl4xoo8";
-//    var deviceAuthToken     = "5e54ce435bb7a925700679102bbac3debca0e301fc7c26ef9aba4abebc1bf2dd3472dcfa443778ade5e1747868d062d9f5d72a0cc269745a5836946c81e88db8";
-//    var customerAuthToken   = "05d67203c8e2d2b77ea5100950d958ae335c162933d0f5c36b2d369a34b8a4b3ce135f6b6f1db8a2dd9548173f3771a787d98a2ad5f08c6a283072ead0b064f8";
-    
-    var viewRightsUrl       = currentHeartBeatData.url;
-    var postParams          = currentHeartBeatData.params;
-    var webServiceKeyHeader = currentHeartBeatData.service_key;
-    var deviceAuthToken     = currentHeartBeatData.device_token;
-    var customerAuthToken   = currentHeartBeatData.auth_token;
-
-    var xmlHttpRequest = new XMLHttpRequest();
-    xmlHttpRequest.open("POST", viewRightsUrl, true);
-    
-    xmlHttpRequest.setRequestHeader("Content-type", contentTypeHeader);
-    
-    xmlHttpRequest.setRequestHeader("X-AN-WebService-IdentityKey", webServiceKeyHeader);
-    xmlHttpRequest.setRequestHeader("X-AN-WebService-DeviceAuthToken", deviceAuthToken);
-    xmlHttpRequest.setRequestHeader("X-AN-WebService-CustomerAuthToken", customerAuthToken);
-    
-    xmlHttpRequest.onreadystatechange = function(responseText) {
-        if(xmlHttpRequest.readyState == 4 && xmlHttpRequest.status == 200) {
-            // NOTE: so, we skip all 'transport' issues
-            var responseString = xmlHttpRequest.responseText;
-            var jsonResponse = JSON.parse(responseString);
-            var timeout = 0;
-            
-            if (true) {//jsonResponse.status == true) {
-                timeout = kSuccessCheckTimeout;
-                lastChance = false;
-                failRetryCount = 0;
-            } else {
-                if (lastChance) {
-                    self.showPermissionError();
-                    return;
-                } else {
-                    timeout = kFailRecheckTimeout;
-                    failRetryCount = failRetryCount + 1;
-                    if (failRetryCount >= 3) {
-                        lastChance = true;
-                        timeout = kLastChanceFailRecheckTimeout;
-                    }
-                }
-                console.error('### PERMISSION ERROR retry count ' + failRetryCount);
-            }
-            console.log('### ViewRights: got response(200) -' + responseString + ' retry in ' + timeout / 1000);
-            self.setupViewRightsTimer(timeout);
-        }
-    }
-    
-    xmlHttpRequest.send(postParams);
-};
-
-sampleplayer.CastPlayer.prototype.showPermissionError = function() {
-    // unload player and trigger error event on media element
-    var self = this;
-    if (self.player_) {
-        self.resetMediaElement_();
-        self.mediaElement_.dispatchEvent(new Event('error'));
-        self.setState_(sampleplayer.State.ERROR, true);
-        self.errorMessageElement_.innerText = currentI18n['connectionError'];
-        console.error('### PERMISSION ERROR - last chance failed');
-    }
-};
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+var newDashPositionSeted = false;
 
 
 /**
@@ -1617,15 +1584,20 @@ sampleplayer.getType_ = function(media) {
  * @return {string} the time (in HH:MM:SS)
  * @private
  */
-sampleplayer.formatDuration_ = function(dur) {
+sampleplayer.formatDuration_ = function(duration) {
+  var dur = Math.abs(duration);
   function digit(n) { return ('00' + Math.round(n)).slice(-2); }
   var hr = Math.floor(dur / 3600);
   var min = Math.floor(dur / 60) % 60;
   var sec = dur % 60;
+  var negative = "";
+  if (duration < 0) {
+      negative =  "-";
+  }
   if (!hr) {
-    return digit(min) + ':' + digit(sec);
+    return negative + digit(min) + ':' + digit(sec);
   } else {
-    return digit(hr) + ':' + digit(min) + ':' + digit(sec);
+    return negative + digit(hr) + ':' + digit(min) + ':' + digit(sec);
   }
 };
 
