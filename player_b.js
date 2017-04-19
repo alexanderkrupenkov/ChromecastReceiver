@@ -54,7 +54,6 @@ var sampleplayer = sampleplayer || {};
 
 var kNetworkCheckingTimeout = 5000;
 var networkCheckingRetryCount = 0;
-var kCustomMediaTypeLive = 101;
 var kInitialTimeout = 1 * 60 * 1000;
 var kSuccessCheckTimeout = 5 * 60 * 1000;
 var kFailRecheckTimeout = 10 * 1000;
@@ -67,6 +66,8 @@ var currentHeartBeatData;
 var currentI18n = i18n['en'];
 var timeToSet = -1;
 var dash_live_duration = 3 * 60 * 60;
+
+var kCustomMediaTypeLive = 101; // DASH FEED TYPE
 /**
  * <p>
  * Cast player constructor - This does the following:
@@ -637,10 +638,16 @@ sampleplayer.CastPlayer.prototype.loadVideo_ = function(info) {
     this.player_ = new cast.player.api.Player(host);
     this.protocol_ = protocolFunc(host);
 	timeToSet = info.message.currentTime;
+	//currentTime = info.message.currentTime;
+	//this.mediaElement_.currentTime = currentTime
 	
 	this.log_('loadVideo_: info.message.currentTime = ' + info.message.currentTime);
 	this.log_('loadVideo_: info.media.duration = ' + info.message.media.duration);
-    if (info.message.currentTime == 0/*&& info.message.media.metadata.CustomMediaType == kCustomMediaTypeLive*/) {
+	
+	var dashFeed = sampleplayer.getExtension_(path) === 'mpd' || type === 'application/dash+xml';
+	this.log_('loadVideo_: dashFeed = ' + dashFeed);
+	
+    if (/*info.message.currentTime == 0 ||*/ dashFeed /*info.message.media.metadata.CustomMediaType == kCustomMediaTypeLive */) {
         this.player_.load(this.protocol_, Infinity);
     } else {
         this.player_.load(this.protocol_, info.message.currentTime);
@@ -1149,20 +1156,6 @@ sampleplayer.CastPlayer.prototype.onPause_ = function() {
     this.setState_(sampleplayer.State.PAUSED, false);
   }
   this.updateProgress_();
-  //this.updateCurrentLiveOffset();
-};
-
-
-sampleplayer.CastPlayer.prototype.updateCurrentLiveOffset = function() {
-  var self = this;
-  if (!isFinite(this.mediaElement_.duration)) {
-    setTimeout(function() {
-      if (self.state_ !== sampleplayer.State.PLAYING && currentTime > 0) {
-        currentTime = currentTime - 1;
-        self.updateCurrentLiveOffset();
-      }
-    }, 1000);
-  }
 };
 
 /**
@@ -1270,9 +1263,8 @@ sampleplayer.CastPlayer.prototype.updateProgress_ = function() {
  * @private
  */
 sampleplayer.CastPlayer.prototype.onSeekStart_ = function() {
-  this.log_('onSeekStart - currentTime = ' + currentTime);
-   
-  
+  this.log_('onSeekStart time = ' + currentTime);
+    
   currentTime = this.mediaElement_.currentTime;
   clearTimeout(this.seekingTimeoutId_);
   this.element_.classList.add('seeking');
@@ -1286,18 +1278,21 @@ sampleplayer.CastPlayer.prototype.onSeekStart_ = function() {
  * @private
  */
 sampleplayer.CastPlayer.prototype.onSeekEnd_ = function() {
-  this.log_('onSeekEnd currentTime = ' + currentTime);
-  this.log_('onSeekEnd newDashPositionSeted = ' + newDashPositionSeted + " isFinite = " +  !isFinite(this.mediaElement_.duration));
+  this.log_('onSeekEnd time = ' + this.mediaElement_.currentTime);
+  this.log_('onSeekEnd newDashPositionSeted = ' + !newDashPositionSeted + " isFinite = " +  !isFinite(this.mediaElement_.duration));
+		
 	
-	
+
   if (!newDashPositionSeted && !isFinite(this.mediaElement_.duration)) {
-	  this.log_('onSeekEnd dash if');
+	  //newDashPositionSeted = false;
       var seconds = new Date().getTime() / 1000 - dash_live_duration;
-      this.mediaElement_.currentTime = seconds + timeToSet;
-      this.log_('onLoadSuccess timeToSet = ' + timeToSet);
-      this.log_('onLoadSuccess this.mediaElement_.currentTime = ' + this.mediaElement_.currentTime);
+	  var result = seconds + timeToSet;
+      this.mediaElement_.currentTime = result;
+      this.log_('onSeekEnd_ timeToSet = ' + timeToSet);
+      this.log_('onSeekEnd_ this.mediaElement_.currentTime = ' + this.mediaElement_.currentTime);
+	  this.log_('onSeekEnd_ result = ' + (seconds + timeToSet));
 	  newDashPositionSeted = true;
-  }
+  } 
   
   currentTime = this.mediaElement_.currentTime;
   clearTimeout(this.seekingTimeoutId_);
@@ -1348,29 +1343,33 @@ sampleplayer.CastPlayer.prototype.onSeek_ = function(event) {
 	  
 	if (!newDashPositionSeted && !isFinite(this.mediaElement_.duration)) {
 	  timeToSet = event.data.currentTime;
+	  newDashPositionSeted = true;
       var seconds = new Date().getTime() / 1000 - dash_live_duration;
       this.mediaElement_.currentTime = seconds + timeToSet;
-      this.log_('onLoadSuccess timeToSet = ' + timeToSet);
-      this.log_('onLoadSuccess this.mediaElement_.currentTime = ' + this.mediaElement_.currentTime);
-	  newDashPositionSeted = true;
-  } else {
+      this.log_('onSeek_ timeToSet = ' + timeToSet);
+      this.log_('onSeek_ this.mediaElement_.currentTime = ' + this.mediaElement_.currentTime);
+    } else {
 	  timeToSet = event.data.currentTime
 	  this.mediaElement_.currentTime = event.data.currentTime
-  }
+    }
   
     event.data.currentTime = timeToSet;
   
-    this.onSeekOrig_(event);
-    this.mediaManager_.sendStatus(event.senderId, event.data.requestId, true);
+    if (isFinite(this.mediaElement_.duration)) {
+		this.onSeekOrig_(event);
+	}
+  
+    //this.onSeekOrig_(event);
+   // this.mediaManager_.sendStatus(event.senderId, event.data.requestId, true);
   
    // this.onSeekOrig_(new cast.receiver.MediaManager.Event(
-   //   cast.receiver.MediaManager.EventType.SEEK,
-   //   /** @type {!cast.receiver.MediaManager.OnSeekRequestData} */ (event.data),
-   //   info.senderId));
+    //  cast.receiver.MediaManager.EventType.SEEK,
+    //  /** @type {!cast.receiver.MediaManager.OnSeekRequestData} */ (event.data),
+    //  info.senderId));
 	  
-	//clearTimeout(this.seekingTimeoutId_);
-	//this.seekingTimeoutId_ = sampleplayer.addClassWithTimeout_(this.element_,
-    //  'seeking', 3000);
+	clearTimeout(this.seekingTimeoutId_);
+	this.seekingTimeoutId_ = sampleplayer.addClassWithTimeout_(this.element_,
+      'seeking', 3000);
 };
 
 /**
@@ -1498,8 +1497,6 @@ sampleplayer.CastPlayer.prototype.onLoadSuccess_ = function() {
   // we should have total time at this point, so update the label
   // and progress bar
 
-  // TODO: for live we have two hours duration(not really duration, but 2h seeking)
-  // so we need to setup 2h for live i think to have the same progressbar with phone
  
   var totalTime = this.mediaElement_.duration;
   if (!isNaN(totalTime)) {
