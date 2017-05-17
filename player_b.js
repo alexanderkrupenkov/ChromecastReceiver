@@ -52,16 +52,6 @@
  */
 var sampleplayer = sampleplayer || {};
 
-var kNetworkCheckingTimeout = 5000;
-var networkCheckingRetryCount = 0;
-var kInitialTimeout = 1 * 60 * 1000;
-var kSuccessCheckTimeout = 5 * 60 * 1000;
-var kFailRecheckTimeout = 10 * 1000;
-var kLastChanceFailRecheckTimeout = 2 * 60 * 60 * 1000;
-
-var failRetryCount = 0;
-var currentTime = -1;
-var lastChance = false;
 var currentHeartBeatData;
 var currentI18n = i18n['en'];
 var timeToSet = -1;
@@ -638,8 +628,6 @@ sampleplayer.CastPlayer.prototype.loadVideo_ = function(info) {
     this.player_ = new cast.player.api.Player(host);
     this.protocol_ = protocolFunc(host);
 	timeToSet = info.message.currentTime;
-	//currentTime = info.message.currentTime;
-	//this.mediaElement_.currentTime = currentTime
 	
 	this.log_('loadVideo_: info.message.currentTime = ' + info.message.currentTime);
 	this.log_('loadVideo_: info.media.duration = ' + info.message.media.duration);
@@ -647,7 +635,7 @@ sampleplayer.CastPlayer.prototype.loadVideo_ = function(info) {
 	var dashFeed = sampleplayer.getExtension_(path) === 'mpd' || type === 'application/dash+xml';
 	this.log_('loadVideo_: dashFeed = ' + dashFeed);
 	
-    if (/*info.message.currentTime == 0 ||*/ dashFeed /*info.message.media.metadata.CustomMediaType == kCustomMediaTypeLive */) {
+    if (/*info.message.currentTime == 0 ||*/ dashFeed) {
         this.player_.load(this.protocol_, Infinity);
     } else {
         this.player_.load(this.protocol_, info.message.currentTime);
@@ -1263,9 +1251,8 @@ sampleplayer.CastPlayer.prototype.updateProgress_ = function() {
  * @private
  */
 sampleplayer.CastPlayer.prototype.onSeekStart_ = function() {
-  this.log_('onSeekStart time = ' + currentTime);
-    
-  currentTime = this.mediaElement_.currentTime;
+  this.log_('onSeekStart time = ' + this.mediaElement_.currentTime);
+
   clearTimeout(this.seekingTimeoutId_);
   this.element_.classList.add('seeking');
   this.updateProgress_();
@@ -1293,8 +1280,7 @@ sampleplayer.CastPlayer.prototype.onSeekEnd_ = function() {
 	  this.log_('onSeekEnd_ result = ' + (seconds + timeToSet));
 	  newDashPositionSeted = true;
   } 
-  
-  currentTime = this.mediaElement_.currentTime;
+
   clearTimeout(this.seekingTimeoutId_);
   this.seekingTimeoutId_ = sampleplayer.addClassWithTimeout_(this.element_,
       'seeking', 3000);
