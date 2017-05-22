@@ -56,7 +56,7 @@ var currentHeartBeatData;
 var currentI18n = i18n['en'];
 var timeToSet = -1;
 var dash_live_duration = 3 * 60 * 60;
-
+ 
 var kCustomMediaTypeLive = 101; // DASH FEED TYPE
 /**
  * <p>
@@ -271,8 +271,6 @@ sampleplayer.CastPlayer = function(element) {
 
   this.mediaManager_.customizedStatusCallback =
       this.customizedStatusCallback_.bind(this);
-
-  //this.setupCheckConnectionTimer();
 };
 
 
@@ -599,8 +597,14 @@ sampleplayer.CastPlayer.prototype.loadVideo_ = function(info) {
       host.licenseUrl = info.message.customData['LICENCE_URL'];
       host.licenseCustomData = info.message.customData['LICENCE_DATA'];
       currentHeartBeatData = info.message.customData['heartbeat_data'];
+	  
+	  var duration = info.message.customData['dvrDuration'];
+	  dash_live_duration = duration
+	  
+	  this.log_('customDataNew duration = ' + duration);
+	   this.log_('customDataNew dash_live_duration = ' + dash_live_duration);
     }
-
+	
     host.updateManifestRequestInfo = function(requestInfo) {
                   if (!requestInfo.url) {
                       requestInfo.url = this.url;
@@ -1120,6 +1124,7 @@ sampleplayer.CastPlayer.prototype.onPlaying_ = function() {
   this.cancelDeferredPlay_('media is already playing');
   var isLoading = this.state_ === sampleplayer.State.LOADING;
   this.setState_(sampleplayer.State.PLAYING, isLoading);
+  this.element_.setAttribute('resumed', true);
 };
 
 
@@ -1133,6 +1138,7 @@ sampleplayer.CastPlayer.prototype.onPlaying_ = function() {
 sampleplayer.CastPlayer.prototype.onPause_ = function() {
   this.log_('onPause');
   this.cancelDeferredPlay_('media is paused');
+  this.element_.setAttribute('resumed', false);
   var isIdle = this.state_ === sampleplayer.State.IDLE;
   var isDone = this.mediaElement_.currentTime === this.mediaElement_.duration;
   var isUnderflow = this.player_ && this.player_.getState()['underflow'];
@@ -1268,8 +1274,6 @@ sampleplayer.CastPlayer.prototype.onSeekEnd_ = function() {
   this.log_('onSeekEnd time = ' + this.mediaElement_.currentTime);
   this.log_('onSeekEnd newDashPositionSeted = ' + !newDashPositionSeted + " isFinite = " +  !isFinite(this.mediaElement_.duration));
 		
-	
-
   if (!newDashPositionSeted && !isFinite(this.mediaElement_.duration)) {
 	  //newDashPositionSeted = false;
       var seconds = new Date().getTime() / 1000 - dash_live_duration;
